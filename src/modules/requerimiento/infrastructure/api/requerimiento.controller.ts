@@ -20,27 +20,25 @@ export class RequerimientoController {
     ) { }
 
     @Post("receive-event-from-email")
+
     @Public()
     async receiveEventFromEmail(@Body() payload: any) {
         return await this.createRequerimientoUseCase.createRequest(payload);
     }
 
     @Get("get-all-requests")
-    @Public()
     async getAll(@Query() query: GetAllRequestRequestDto): Promise<ApiResponse<PaginatedResponse<RequerimientoResponseDto>>> {
         const response = await this.getAllRequestUseCase.getAllRequests(query);
         return ResponseUtil.success("Requerimientos obtenidos exitosamente", response);
     }
 
     @Get("get-request-by-id/:id")
-    @Public()
     async getById(@Param("id") id: number) {
         const response = await this.getRequerimientoByIdUseCase.execute(id);
         return ResponseUtil.success("Requerimiento obtenido exitosamente", response);
     }
 
     @Put("update-request/:id")
-    @Public()
     async update(@Param("id") id: number, @Body() payload: UpdateRequerimientoRequestDto) {
         const response = await this.updateRequerimientoUseCase.execute(id, payload);
         return ResponseUtil.success("Requerimiento actualizado exitosamente", response);
