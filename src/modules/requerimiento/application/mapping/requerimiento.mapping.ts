@@ -15,7 +15,7 @@ export class RequerimientoMapping {
             biddingId: entity.biddingId,
             bidding: entity.bidding,
             fechaIngresoReq: entity.fechaIngresoReq,
-            mesIngresoReq: entity.mesIngresoReq, // Calculated in entity or here? Assuming entity logic for now, but user asked for specific fields here.
+            mesIngresoReq: entity.fechaIngresoReq ? DateUtil.getMonthName(entity.fechaIngresoReq) : '',
             fechaIngresoSolicitada: entity.fechaIngresoSolicitada,
             mesIngresoRimac: this.calculateMesIngresoRimac(entity),
             fechaIngresoLimite: entity.fechaIngresoLimite,
@@ -43,9 +43,6 @@ export class RequerimientoMapping {
     }
 
     private static calculateTipoEquipo(entity: StaffingRequestEntity): TeamType {
-        // Logic: Search bidding? User said VLOOKUP(BIDDING).
-        // If bidding entity has info, use it. Otherwise fell back to profile logic.
-        // Assuming current simple profile logic for now as we don't have the VLOOKUP table source.
         if (entity.perfil) {
             const normalized = entity.perfil.toUpperCase();
             if (normalized.includes('BACKEND') || normalized.includes('FRONTEND')) return TeamType.ADICIONAL_1;
@@ -70,18 +67,12 @@ export class RequerimientoMapping {
 
         const diffTime = limit.getTime() - today.getTime();
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        // User logic: M731-HOY() < 0 -> VENCIDO (Limit < Today)
-        // M731-HOY() <= 3 -> POR VENCER (Limit - Today <= 3)
-        // ELSE -> EN PLAZO
-
         if (diffDays < 0) return 'VENCIDO';
         if (diffDays <= 3) return 'POR VENCER';
         return 'EN PLAZO';
     }
 
     private static calculateMesIngreso(entity: StaffingRequestEntity): string {
-        // User said: F. INICIO TALENTO / CIERRE. Assuming Start Date takes precedence or fallback to closure?
-        // Formula: =TEXTO([@[F. INICIO TALENTO / CIERRE]];"mmmm")
         const date = entity.fechaInicioTalento || entity.fechaCierreReq;
         return date ? DateUtil.getMonthName(date) : '';
     }
@@ -97,12 +88,6 @@ export class RequerimientoMapping {
 
         const today = DateUtil.getPeruDate();
 
-        // Logic:
-        // CERRADO -> NetworkDays(Req, TalentStart OR Closure)
-        // CUBIERTO OTRO -> NetworkDays(Req, TalentStart OR Closure)
-        // ENTREVISTA -> NetworkDays(Req, Today)
-        // PENDIENTE CV -> NetworkDays(Req, Today)
-
         let endDate: Date | undefined;
 
         if (estado === 'CERRADO' || estado === 'CUBIERTO OTRO') {
@@ -112,13 +97,6 @@ export class RequerimientoMapping {
         }
 
         if (endDate) {
-            // Note: Returning the NUMBER of days? Or string?
-            // The user formula returns DIAS.LAB results (number).
-            // But the field name is 'indicadorLeadTime', which usually implies a string status (CUMPLE/NO CUMPLE)?
-            // Creating both logic? The request says "Indicar leadt time: =SI(...)". 
-            // The previous logic was CUMPLE/NO CUMPLE. 
-            // If the user wants the DAYS count as the indicator, I should return stringified number.
-            // Let's assume return number as string.
             const days = DateUtil.getBusinessDays(reqDate, endDate);
             return days.toString();
         }
