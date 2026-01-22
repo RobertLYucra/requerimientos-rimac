@@ -1,0 +1,40 @@
+import { Exclude, Expose } from "class-transformer";
+import { BiddingCatalogEntity } from "src/modules/requerimiento/domain/entity/bidding-catalog.entity";
+import { RequestType, TeamType } from "src/modules/requerimiento/domain/entity/staffing-request.entity";
+
+export class RequerimientoResponseDto {
+    id: number;
+    codPedido: string;
+    codGabin: string;
+    numeroQ: number;
+    tipoRequerimiento: RequestType;
+    tiempoMeses: number;
+    perfil: string;
+    biddingId: number;
+    bidding?: BiddingCatalogEntity | null;
+    fechaIngresoReq: Date;
+    mesIngresoReq: string;
+    fechaIngresoSolicitada: Date;
+    mesIngresoRimac: string;
+    fechaIngresoLimite: Date;
+    indicador: string;
+    estadoIndra: string;
+    fechaCierreReq: Date;
+    fechaInicioTalento: Date;
+    mesIngreso: string;
+    indicadorLeadTime: string;
+    indicadorPenalidad: string;
+    mesCierre: string;
+    fechaOrigen: Date;
+    tipoEquipo: TeamType;
+    cantidadCvPresentados: number;
+    ratioD: number;
+    comentarioOperacion: string;
+    comentarioRimac: string;
+    columna1: string;
+    proyecto: string;
+    perfilesOpcionales: string;
+    solicitante: string;
+    fechaActualizacion: Date;
+    fechaCreacion: Date;
+}

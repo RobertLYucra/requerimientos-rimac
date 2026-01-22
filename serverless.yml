@@ -1,0 +1,102 @@
+service: api-seguimiento-requerimientos-service
+frameworkVersion: '4'
+
+plugins:
+  - serverless-esbuild
+  - serverless-offline
+  - serverless-prune-plugin
+
+build:
+  esbuild: false
+package:
+  individually: true
+custom:
+  stage: ${opt:stage, 'test'}
+
+  allowedStages:
+    test: true
+    desa: true
+    prod: true
+  validateStage: ${self:custom.allowedStages.${self:custom.stage}}
+
+  serverless-offline:
+    httpPort: 3000
+    prefix: ''
+
+  settings:
+    serviceName: seguimiento-requerimientos-service
+    region: ${opt:region, 'us-east-2'}
+    deployBucket: omnexa-${self:custom.stage}-lambda
+    env:
+      DB_HOST: ${ssm:/nexa-database-${self:custom.stage}-host}
+      DB_PORT: ${ssm:/nexa-database-${self:custom.stage}-port, '3306'}
+      DB_USERNAME: ${ssm:/nexa-database-${self:custom.stage}-username}
+      DB_PASSWORD: ${ssm:/nexa-database-${self:custom.stage}-password}
+      DB_DATABASE: bd_support
+
+      JWT_SECRET: super-secret-jwt-key-change-in-production-2024
+      JWT_EXPIRATION: 24h
+
+  esbuild:
+    bundle: true
+    minify: true
+    sourcemap: false
+    platform: node
+    exclude:
+      - aws-sdk
+    target: node20
+    concurrency: 5
+    external:
+      - '@aws-sdk/*'
+      - '@nestjs/microservices'
+      - '@nestjs/websockets'
+      - cache-manager
+      - class-transformer
+      - bcrypt
+    packager: npm
+    keepNames: true
+    metafile: false
+    treeShaking: true
+  prune:
+    automatic: true
+    number: 1
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  memorySize: 2048
+  timeout: 120
+  region: ${self:custom.settings.region}
+  iam:
+    role: arn:aws:iam::893048189186:role/nexa-lambda-access-${self:custom.stage}-role
+  deploymentBucket:
+    name: ${self:custom.settings.deployBucket}
+    maxPreviousDeploymentArtifacts: 2
+    #serverSideEncryption: AES256
+  environment: ${self:custom.settings.env}
+
+  stackTags:
+    MODULE: seguimiento-requerimientos
+    TASK: seguimiento-requerimientos
+    ENVIRONMENT: ${self:custom.stage}
+
+functions:
+  api-seguimiento-requerimientos:
+    handler: dist/modules/requerimiento/infrastructure/bootstrap/serverless-handler.handler
+    name: ${self:custom.settings.serviceName}-${self:custom.stage}-requerimientos
+    description: API para manejar seguimiento de requerimientos (${self:custom.stage})
+    events:
+      - http:
+          method: ANY
+          path: 'api-seguimiento-requerimientos/{proxy+}'
+          cors: true
+
+  api-seguimiento-requerimientos-user:
+    handler: dist/modules/usuario/infrastructure/bootstrap/serverless-handler.handler
+    name: ${self:custom.settings.serviceName}-${self:custom.stage}-requerimientos-user
+    description: API para manejar seguimiento de usuarios (${self:custom.stage})
+    events:
+      - http:
+          method: ANY
+          path: 'api-seguimiento-requerimientos-user/{proxy+}'
+          cors: true
